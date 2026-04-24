@@ -66,11 +66,11 @@ from megatron.core.enums import ModelType
 from megatron.training.training import get_model
 from megatron.training import print_rank_0
 
-from baige_omni.train.parser import parse_train_args
-from baige_omni.train.initialize import initialize_baige_megatron
-from baige_omni.models.foundation.llm_model_provider import llm_model_provider
-from baige_omni.models.omni_models.omni_model_provider import omni_model_provider
-from baige_omni.utils import get_model_config
+from loongforge.train.parser import parse_train_args
+from loongforge.train.initialize import initialize_loongforge_megatron
+from loongforge.models.foundation.llm_model_provider import llm_model_provider
+from loongforge.models.omni_models.omni_model_provider import omni_model_provider
+from loongforge.utils import get_model_config
 
 from dist_checkpoint.checkpoint.hf_checkpoint_loader import load_hf_checkpoint_online
 from dist_checkpoint.checkpoint.hf_checkpoint_saver import save_hf_checkpoint_online
