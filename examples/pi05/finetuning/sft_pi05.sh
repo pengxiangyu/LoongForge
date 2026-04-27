@@ -15,7 +15,7 @@ export USE_BF16_BUFFER=false #Dtensor not support
 export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True # avoid OOM
 
 # Distributed launch (defaults single node)
-GPUS_PER_NODE=${GPUS_PER_NODE:-1}
+GPUS_PER_NODE=${GPUS_PER_NODE:-8}
 MASTER_ADDR=${MASTER_ADDR:-"localhost"}
 MASTER_PORT=${MASTER_PORT:-"6000"}
 NNODES=${WORLD_SIZE:-"1"}
@@ -40,8 +40,6 @@ DATA_ARGS=(
 
 # Core training args — pi05 trainer only needs minimal Megatron flags
 TRAINING_ARGS=(
-    --use-megatron-fsdp
-    --data-parallel-sharding-strategy optim
     --training-phase sft
     --micro-batch-size 16
     --global-batch-size 128
@@ -69,11 +67,9 @@ TRAINING_ARGS=(
     --no-strict-fsdp-dtensor-load
     --finetune
     --bf16
-    --grad-reduce-in-bf16
     --use-precision-aware-optimizer
     --exp-avg-dtype bf16
     --exp-avg-sq-dtype bf16
-    --main-grads-dtype bf16
     --num-distributed-optimizer-instances 1
     --save $CHECKPOINT_PATH
     --save-interval 30000
