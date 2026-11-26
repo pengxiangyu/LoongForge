@@ -1,0 +1,187 @@
+{
+ "name": "align/aligned",
+ "expect": "PASS",
+ "comment": "relative deviation ~1e-3, shrinking: inside all three limits, no amplification",
+ "src": {
+  "schema": "vma-loss-trace@1",
+  "run": {
+   "data_id": "sample_vla/val_shard_000:sha256:3f1c",
+   "order_hash": "sampler=seq,seed=1234:sha256:9ab2",
+   "ckpt_hash": "sha256:0d41d8cd98f00b204e9800998ecf8427",
+   "launch": "micro_batch=2 precision=bf16 seq_len=2048 seed=1234 lr=2.5e-5"
+  },
+  "steps": [
+   {
+    "step": 0,
+    "loss": 2.4
+   },
+   {
+    "step": 1,
+    "loss": 2.355
+   },
+   {
+    "step": 2,
+    "loss": 2.31
+   },
+   {
+    "step": 3,
+    "loss": 2.265
+   },
+   {
+    "step": 4,
+    "loss": 2.22
+   },
+   {
+    "step": 5,
+    "loss": 2.175
+   },
+   {
+    "step": 6,
+    "loss": 2.13
+   },
+   {
+    "step": 7,
+    "loss": 2.085
+   },
+   {
+    "step": 8,
+    "loss": 2.04
+   },
+   {
+    "step": 9,
+    "loss": 1.995
+   },
+   {
+    "step": 10,
+    "loss": 1.95
+   },
+   {
+    "step": 11,
+    "loss": 1.905
+   },
+   {
+    "step": 12,
+    "loss": 1.86
+   },
+   {
+    "step": 13,
+    "loss": 1.815
+   },
+   {
+    "step": 14,
+    "loss": 1.77
+   },
+   {
+    "step": 15,
+    "loss": 1.725
+   },
+   {
+    "step": 16,
+    "loss": 1.68
+   },
+   {
+    "step": 17,
+    "loss": 1.635
+   },
+   {
+    "step": 18,
+    "loss": 1.59
+   },
+   {
+    "step": 19,
+    "loss": 1.545
+   }
+  ]
+ },
+ "tgt": {
+  "schema": "vma-loss-trace@1",
+  "run": {
+   "data_id": "sample_vla/val_shard_000:sha256:3f1c",
+   "order_hash": "sampler=seq,seed=1234:sha256:9ab2",
+   "ckpt_hash": "sha256:0d41d8cd98f00b204e9800998ecf8427",
+   "launch": "micro_batch=2 precision=bf16 seq_len=2048 seed=1234 lr=2.5e-5"
+  },
+  "steps": [
+   {
+    "step": 0,
+    "loss": 2.40288
+   },
+   {
+    "step": 1,
+    "loss": 2.35775535
+   },
+   {
+    "step": 2,
+    "loss": 2.3126334
+   },
+   {
+    "step": 3,
+    "loss": 2.26751415
+   },
+   {
+    "step": 4,
+    "loss": 2.2223976
+   },
+   {
+    "step": 5,
+    "loss": 2.17728375
+   },
+   {
+    "step": 6,
+    "loss": 2.1321726
+   },
+   {
+    "step": 7,
+    "loss": 2.08706415
+   },
+   {
+    "step": 8,
+    "loss": 2.0419584
+   },
+   {
+    "step": 9,
+    "loss": 1.99685535
+   },
+   {
+    "step": 10,
+    "loss": 1.951755
+   },
+   {
+    "step": 11,
+    "loss": 1.90665735
+   },
+   {
+    "step": 12,
+    "loss": 1.8615624
+   },
+   {
+    "step": 13,
+    "loss": 1.81647015
+   },
+   {
+    "step": 14,
+    "loss": 1.7713806
+   },
+   {
+    "step": 15,
+    "loss": 1.72629375
+   },
+   {
+    "step": 16,
+    "loss": 1.6812096
+   },
+   {
+    "step": 17,
+    "loss": 1.63612815
+   },
+   {
+    "step": 18,
+    "loss": 1.5910494
+   },
+   {
+    "step": 19,
+    "loss": 1.54597335
+   }
+  ]
+ }
+}

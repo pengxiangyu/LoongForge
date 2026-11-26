@@ -1,0 +1,24 @@
+# The only account between the framework and the precision-alignment skill. F5 reads conclusions
+# from here; it neither collects losses nor computes deviation statistics of its own, and it never
+# turns a skill verdict into a gate verdict -- the frozen gate does that.
+#
+# A value of `str?` marks an optional input key. Output keys are checked for presence only.
+version: 4
+skill: precision-alignment
+capabilities:
+  collect_precision:              # F5: per-step loss of one training path
+    input: {run_cmd: str, workdir: path, steps: int}
+    output: {loss_trace: path}
+  compare_and_analyze:            # F5: deviation and its attribution
+    input: {trace_a: path, trace_b: path}
+    output: {diff_max: float, diff_p95: float, diff_mean: float, verdict: str, evidence: []}
+  propose_fix:                    # F5: what to change, per slot, when the gate fails
+    input: {compare_result: obj}
+    output: {hints: [{slot: str, reason: str, suggestion: str}]}
+status: [ok, partial, failed]
+rules:
+  - "the collected trace must follow validate/trajectory.py's vma-loss-trace@1 schema, including
+     the four-same fingerprint; a trace without it cannot be compared"
+  - "`verdict` from compare_and_analyze is evidence, not a judgement: the numeric verdict comes
+     from validate/frozen/align_gate_frozen.py against the frozen thresholds"
+  - "propose_fix hints are routed back to F4 by slot; they never widen a threshold"

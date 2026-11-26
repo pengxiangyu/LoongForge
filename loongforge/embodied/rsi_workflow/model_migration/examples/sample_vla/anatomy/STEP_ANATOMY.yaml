@@ -1,0 +1,138 @@
+# Structure source of truth of the `sample_vla` example task (what F2 writes, for F3/F4 to read).
+#
+# This is a template, not a model: the slot set is the shape a single-backbone, single-action-head
+# VLA takes, with the optional branches recorded as empty so the structure judge can tell "this
+# model has none" from "nobody looked". Copy it and replace `src` with the real source locations.
+#
+# Every slot carries src, dst and action. `dst` must be exactly the TREE_SPEC target for its slot,
+# and the slots landing on the target framework's shared files use `wrap` or `adapt`: those files
+# already carry the other embodied models and are reused, never overwritten.
+version: 4
+model_tag: sample_vla
+source: {repo: "<original VLA repository>", commit: "<commit>"}
+
+segments:
+  - id: S0
+    name: resources and registration
+    required: true
+    slots:
+      - {slot: registry_slot, src: "src/registry.py", dst: "model/registry.py", action: adapt,
+         reason: "add one entry to the shared registry; the registration decorator differs"}
+      - {slot: config_slot, src: "src/configuration.py",
+         dst: "model/sample_vla/model_configuration_sample_vla.py", action: adapt,
+         reason: "same fields, target framework naming and dataclass conventions"}
+  - id: S1
+    name: observation assembly
+    required: true
+    slots:
+      - {slot: dataset_slot, src: "src/data/dataset.py",
+         dst: "data/datasets/sample_vla/sample_vla_dataset.py", action: adapt,
+         reason: "same reading logic, target framework dataset base class"}
+      - {slot: transform_slot, src: "src/data/transforms.py",
+         dst: "data/datasets/sample_vla/transforms/sample_vla_transform.py", action: adapt,
+         reason: "same transform chain, placed per the model-adaptation dataset plan"}
+      - {slot: collator_slot, src: "src/data/collate.py",
+         dst: "data/datasets/sample_vla/transforms/sample_vla_collator.py", action: copy,
+         reason: "logic and interface already match"}
+      - {slot: data_config_slot, src: "src/data/config.py",
+         dst: "data/datasets/sample_vla/transforms/data_configuration_sample_vla.py",
+         action: adapt, reason: "same configuration, target framework config conventions"}
+      - {slot: norm_stats_slot, src: "src/data/compute_stats.py",
+         dst: "data/datasets/compute_stats.py", action: adapt,
+         reason: "shared statistics tool; add this model, keep the existing models working"}
+  - id: S2
+    name: vision encoding
+    required: true
+    slots:
+      - {slot: vision_slot, name: siglip2, src: "src/models/vision/siglip2.py",
+         dst: "model/sample_vla/modules/vision_siglip2.py", action: adapt,
+         reason: "same encoder, imports and base class replaced by target framework equivalents"}
+  - id: S3
+    name: language and state encoding
+    required: true
+    slots:
+      - {slot: backbone_slot, name: qwen2_5, src: "src/models/llm/qwen2_5.py",
+         dst: "model/sample_vla/modules/backbone_qwen2_5.py", action: wrap,
+         reason: "the target framework already implements this backbone; reuse it",
+         reuse: {module: "loongforge.embodied.model.wall_oss_0_5.qwen2_5",
+                 exports: ["Qwen2_5Model"], alias: {Qwen2_5Model: "Qwen2Backbone"}}}
+      - {slot: tokenizer_slot, name: qwen2_5, src: "src/models/llm/prompt.py",
+         dst: "model/sample_vla/modules/tokenizer_qwen2_5.py", action: adapt,
+         reason: "prompt construction is model specific; only the imports change"}
+  - id: S3.5
+    name: attention and fused ops
+    required: false
+    slots: []
+    empty_reason: "the model uses standard attention and defines no operator layer of its own"
+  - id: S4
+    name: prefix fusion
+    required: true
+    slots:
+      - {slot: main_slot, src: "src/models/model.py",
+         dst: "model/sample_vla/modeling_sample_vla.py", action: adapt,
+         reason: "same forward order, module construction follows the target framework"}
+  - id: S5
+    name: action expert forward
+    required: true
+    slots:
+      - {slot: action_head_slot, name: dit, src: "src/models/action/dit.py",
+         dst: "model/sample_vla/modules/action_dit.py", action: adapt,
+         reason: "same action branch, target framework layer imports"}
+  - id: S6
+    name: loss
+    required: true
+    slots:
+      - {slot: loss_slot, name: rectified_flow, src: "src/models/loss.py",
+         dst: "model/sample_vla/modules/loss_rectified_flow.py", action: copy,
+         reason: "the objective is self-contained; the loss is what F5 compares, so keep it exact"}
+  - id: S7
+    name: backward and update
+    required: true
+    slots:
+      - {slot: trainer_slot, src: "src/train/trainer.py",
+         dst: "train/trainers/sample_vla_trainer.py", action: adapt,
+         reason: "same step order, target framework trainer base class"}
+      - {slot: optimizer_slot, src: "src/train/optim.py", dst: "optimizer/optimizer.py",
+         action: wrap,
+         reason: "the framework optimizer is equivalent; the wrapper keeps the original parameter groups and hyper-parameter semantics",
+         reuse: {module: "loongforge.embodied.optimizer.optimizer",
+                 exports: ["build_optimizer"], alias: {build_optimizer: "create_optimizer"}}}
+      - {slot: lr_scheduler_slot, src: "src/train/schedule.py", dst: "optimizer/lr_scheduler.py",
+         action: wrap, reason: "the framework schedule is equivalent; warmup is passed through",
+         reuse: {module: "loongforge.embodied.optimizer.lr_scheduler",
+                 exports: ["build_lr_scheduler"], alias: {build_lr_scheduler: "create_scheduler"}}}
+      - {slot: parallel_slot, src: "src/train/distributed.py", dst: "distributed/parallel.py",
+         action: wrap, reason: "reuse the framework DDP/FSDP strategies instead of porting one",
+         reuse: {module: "loongforge.embodied.distributed.parallel",
+                 exports: ["setup_parallel"], alias: {setup_parallel: "init_distributed"}}}
+      - {slot: checkpoint_slot, src: "src/train/checkpoint.py", dst: "distributed/checkpoint.py",
+         action: wrap, reason: "reuse the framework checkpoint layer; renames live in F4 weights/",
+         reuse: {module: "loongforge.embodied.distributed.checkpoint",
+                 exports: ["load_checkpoint", "save_checkpoint"]}}
+
+branches:
+  - {id: W, enabled: false, empty_reason: "no world model or video generation branch"}
+  - {id: M, enabled: false, empty_reason: "dense forward, no expert routing"}
+  # E is two branches: E-infer on the model side, E-eval on the training side. They hit
+  # independently -- most embodied models hit E-eval only.
+  #
+  # E-infer hits here because this model's inference carries per-episode rollout state, which
+  # training has no concept of. If inference were only pre- and post-processing around the
+  # training forward (as in model/xvla/modeling_xvla.py, where predict_action lives inside
+  # modeling_xvla.py), it would be written as:
+  #   - {id: E-infer, enabled: false,
+  #      empty_reason: "inference entry is inline in the main forward; travels with main_slot"}
+  - id: E-infer
+    enabled: true
+    slots:
+      - {slot: infer_slot, src: "src/infer/serve.py",
+         dst: "model/sample_vla/modeling_sample_vla_infer.py", action: reimplement,
+         reason: "the original inference path is bound to its own serving stack"}
+  - id: E-eval
+    enabled: true
+    slots:
+      - {slot: eval_slot, src: "src/eval/libero_env.py",
+         dst: "eval/factories/sample_vla_factory.py", action: wrap,
+         reason: "assemble from the framework's eval factories and action decoders instead of porting the original harness",
+         reuse: {module: "loongforge.embodied.eval.factories.registry",
+                 exports: ["register_factory"], alias: {register_factory: "register_env"}}}

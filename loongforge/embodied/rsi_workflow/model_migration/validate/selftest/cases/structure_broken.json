@@ -1,0 +1,41 @@
+{
+ "name": "structure/broken",
+ "expect": "FAIL",
+ "comment": "five planted defects at once: a missing required segment (S6), a slot with no file, a surplus file no slot accounts for, a disabled branch with no empty_reason, an enabled branch holding no slot, and an unmapped weight key",
+ "anatomy": {
+  "version": 4,
+  "model_tag": "sample_vla",
+  "segments": [
+   {"id": "S0", "name": "resources and registration", "required": true, "slots": [
+    {"slot": "registry_slot", "src": "src/registry.py", "dst": "model/registry.py", "action": "adapt"}]},
+   {"id": "S1", "name": "observation assembly", "required": true, "slots": [
+    {"slot": "dataset_slot", "src": "src/data/dataset.py", "dst": "data/datasets/sample_vla/sample_vla_dataset.py", "action": "adapt"}]},
+   {"id": "S2", "name": "vision encoding", "required": true, "slots": [
+    {"slot": "vision_slot", "name": "siglip", "src": "src/vision.py", "dst": "model/sample_vla/modules/vision_siglip.py", "action": "adapt"}]},
+   {"id": "S3", "name": "language and state encoding", "required": true, "slots": [
+    {"slot": "backbone_slot", "name": "qwen2_5", "src": "src/backbone.py", "dst": "model/sample_vla/modules/backbone_qwen2_5.py", "action": "wrap"}]},
+   {"id": "S4", "name": "prefix fusion", "required": true, "slots": [
+    {"slot": "main_slot", "src": "src/model.py", "dst": "model/sample_vla/modeling_sample_vla.py", "action": "adapt"}]},
+   {"id": "S5", "name": "action expert forward", "required": true, "slots": [
+    {"slot": "action_head_slot", "name": "dit", "src": "src/action_dit.py", "dst": "model/sample_vla/modules/action_dit.py", "action": "adapt"}]},
+   {"id": "S7", "name": "backward and update", "required": true, "slots": [
+    {"slot": "trainer_slot", "src": "src/trainer.py", "dst": "train/trainers/sample_vla_trainer.py", "action": "adapt"}]}
+  ],
+  "branches": [
+   {"id": "W", "enabled": false},
+   {"id": "M", "enabled": false, "empty_reason": "the model is a dense forward"},
+   {"id": "E-infer", "enabled": true, "slots": []},
+   {"id": "E-eval", "enabled": false, "empty_reason": "evaluated outside the framework"}
+  ]
+ },
+ "tree": [
+  "model/registry.py",
+  "data/datasets/sample_vla/sample_vla_dataset.py",
+  "model/sample_vla/modules/vision_siglip.py",
+  "model/sample_vla/modeling_sample_vla.py",
+  "model/sample_vla/modules/action_dit.py",
+  "train/trainers/sample_vla_trainer.py",
+  "model/sample_vla/modules/unaccounted_helper.py"
+ ],
+ "weight_report": {"status": "ok", "unmapped": ["action_expert.layers.0.mlp.weight"]}
+}

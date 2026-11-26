@@ -1,0 +1,15 @@
+# Source weight key -> target weight key. Edited per task; the entries below are the shape, not a
+# model. `src` and `dst` are prefixes: every source key starting with `src` is renamed by replacing
+# that prefix, which keeps per-layer keys out of this file.
+#
+# transpose: optional axis permutation applied after the rename, for a layout difference.
+version: 4
+unmapped_policy: fail      # a source key no rule covers stops the conversion. A checkpoint that
+                           # loads while missing parameters is the failure this prevents.
+maps:
+  - {src: "vision_tower.", dst: "vision_siglip2."}
+  - {src: "language_model.", dst: "backbone_qwen2_5."}
+  - {src: "action_expert.", dst: "action_dit."}
+  - {src: "action_out_proj.weight", dst: "action_dit.out_proj.weight", transpose: [1, 0]}
+drop:                      # source keys that intentionally do not travel; each needs a reason
+  - {src: "lm_head.", reason: "the migrated model does not train the text head"}

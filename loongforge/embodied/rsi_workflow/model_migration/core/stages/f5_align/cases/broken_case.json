@@ -1,0 +1,187 @@
+{
+ "name": "align/broken",
+ "expect": "FAIL",
+ "comment": "deviation grows from 8e-4 to well past one percent: must be rejected",
+ "src": {
+  "schema": "vma-loss-trace@1",
+  "run": {
+   "data_id": "sample_vla/val_shard_000:sha256:3f1c",
+   "order_hash": "sampler=seq,seed=1234:sha256:9ab2",
+   "ckpt_hash": "sha256:0d41d8cd98f00b204e9800998ecf8427",
+   "launch": "micro_batch=2 precision=bf16 seq_len=2048 seed=1234 lr=2.5e-5"
+  },
+  "steps": [
+   {
+    "step": 0,
+    "loss": 2.4
+   },
+   {
+    "step": 1,
+    "loss": 2.355
+   },
+   {
+    "step": 2,
+    "loss": 2.31
+   },
+   {
+    "step": 3,
+    "loss": 2.265
+   },
+   {
+    "step": 4,
+    "loss": 2.22
+   },
+   {
+    "step": 5,
+    "loss": 2.175
+   },
+   {
+    "step": 6,
+    "loss": 2.13
+   },
+   {
+    "step": 7,
+    "loss": 2.085
+   },
+   {
+    "step": 8,
+    "loss": 2.04
+   },
+   {
+    "step": 9,
+    "loss": 1.995
+   },
+   {
+    "step": 10,
+    "loss": 1.95
+   },
+   {
+    "step": 11,
+    "loss": 1.905
+   },
+   {
+    "step": 12,
+    "loss": 1.86
+   },
+   {
+    "step": 13,
+    "loss": 1.815
+   },
+   {
+    "step": 14,
+    "loss": 1.77
+   },
+   {
+    "step": 15,
+    "loss": 1.725
+   },
+   {
+    "step": 16,
+    "loss": 1.68
+   },
+   {
+    "step": 17,
+    "loss": 1.635
+   },
+   {
+    "step": 18,
+    "loss": 1.59
+   },
+   {
+    "step": 19,
+    "loss": 1.545
+   }
+  ]
+ },
+ "tgt": {
+  "schema": "vma-loss-trace@1",
+  "run": {
+   "data_id": "sample_vla/val_shard_000:sha256:3f1c",
+   "order_hash": "sampler=seq,seed=1234:sha256:9ab2",
+   "ckpt_hash": "sha256:0d41d8cd98f00b204e9800998ecf8427",
+   "launch": "micro_batch=2 precision=bf16 seq_len=2048 seed=1234 lr=2.5e-5"
+  },
+  "steps": [
+   {
+    "step": 0,
+    "loss": 2.40192
+   },
+   {
+    "step": 1,
+    "loss": 2.366304
+   },
+   {
+    "step": 2,
+    "loss": 2.330328
+   },
+   {
+    "step": 3,
+    "loss": 2.293992
+   },
+   {
+    "step": 4,
+    "loss": 2.257296
+   },
+   {
+    "step": 5,
+    "loss": 2.22024
+   },
+   {
+    "step": 6,
+    "loss": 2.182824
+   },
+   {
+    "step": 7,
+    "loss": 2.145048
+   },
+   {
+    "step": 8,
+    "loss": 2.106912
+   },
+   {
+    "step": 9,
+    "loss": 2.068416
+   },
+   {
+    "step": 10,
+    "loss": 2.02956
+   },
+   {
+    "step": 11,
+    "loss": 1.990344
+   },
+   {
+    "step": 12,
+    "loss": 1.950768
+   },
+   {
+    "step": 13,
+    "loss": 1.910832
+   },
+   {
+    "step": 14,
+    "loss": 1.870536
+   },
+   {
+    "step": 15,
+    "loss": 1.82988
+   },
+   {
+    "step": 16,
+    "loss": 1.788864
+   },
+   {
+    "step": 17,
+    "loss": 1.747488
+   },
+   {
+    "step": 18,
+    "loss": 1.705752
+   },
+   {
+    "step": 19,
+    "loss": 1.663656
+   }
+  ]
+ }
+}

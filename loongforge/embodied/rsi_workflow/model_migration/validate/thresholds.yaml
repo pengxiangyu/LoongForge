@@ -1,0 +1,15 @@
+# The single source of the numeric verdict. Frozen into validate/frozen/ before F5 compares
+# anything; a failing gate is fixed in the target implementation, never here.
+#
+# diff_i = |loss_src_i - loss_tgt_i| / max(|loss_src_i|, eps), the first warmup_steps dropped.
+metrics: [diff_max, diff_p95, diff_mean]
+limits:
+  diff_max: 0.01    # one percent
+  diff_p95: 0.01
+  diff_mean: 0.01
+extra:
+  no_amplify: true  # the deviation must not grow along the trajectory
+  amplify_tol: 0.0  # absorbs floating-point noise in the trend comparison only
+  warmup_steps: 5   # initialisation jitter would otherwise fail a sound migration
+  eps: 1.0e-12      # guards the relative-deviation denominator
+rule: "PASS requires all three metrics inside their limits and no amplification"

@@ -1,0 +1,16 @@
+{
+ "closure": {
+  "align_gate.py": "align_gate_frozen.py",
+  "stats.py": "stats.py",
+  "structure_judge.py": "structure_judge.py",
+  "thresholds.yaml": "thresholds.yaml"
+ },
+ "files": {
+  "align_gate_frozen.py": "66aed184e219c28bf375d03ea6a1c49d5ba6149609474d0d28f0fd6995692108",
+  "stats.py": "2a94bd68078c50402171eea8c9ee261394531b752bef60517c925d1934f66699",
+  "structure_judge.py": "1938fab4de16441002d5028080b2e15e20e403e43da0ffd5337979a46008da9f",
+  "thresholds.yaml": "480ec917d73d4e1c5e45d884dd0e3df5de5b1919627ef606d04931f5f3c39b6e"
+ },
+ "locked_at": "2026-11-24T09:58:08.953126+00:00",
+ "rule": "a failing verdict is fixed in the target project; no file in validate/frozen/ may be edited to make it pass"
+}

@@ -1,0 +1,29 @@
+{
+ "comment": "The two paths F5 drives. `fingerprint` is the four-same declaration; collection and comparison are the precision-alignment skill's work. Replace the commands, directories and hashes with the real ones -- the fingerprints must be identical in all four fields, which is exactly what four_same_check.py enforces.",
+ "src": {
+  "name": "src",
+  "run_cmd": "bash <original repo>/scripts/train.sh --max-steps 20 --seed 1234",
+  "workdir": "<original repo>",
+  "steps": 20,
+  "trace": "work/sample_vla/precision/collected_src.json",
+  "fingerprint": {
+   "data_id": "sample_vla/train_shard_000:sha256:<digest>",
+   "order_hash": "sampler=seq,seed=1234:sha256:<digest>",
+   "ckpt_hash": "sha256:<digest of the converted checkpoint>",
+   "launch": "micro_batch=2 precision=bf16 seq_len=2048 seed=1234 lr=2.5e-5"
+  }
+ },
+ "tgt": {
+  "name": "tgt",
+  "run_cmd": "bash examples/embodied/sample_vla/train_sample_vla.sh",
+  "workdir": "work/sample_vla/target",
+  "steps": 20,
+  "trace": "work/sample_vla/precision/collected_tgt.json",
+  "fingerprint": {
+   "data_id": "sample_vla/train_shard_000:sha256:<digest>",
+   "order_hash": "sampler=seq,seed=1234:sha256:<digest>",
+   "ckpt_hash": "sha256:<digest of the converted checkpoint>",
+   "launch": "micro_batch=2 precision=bf16 seq_len=2048 seed=1234 lr=2.5e-5"
+  }
+ }
+}

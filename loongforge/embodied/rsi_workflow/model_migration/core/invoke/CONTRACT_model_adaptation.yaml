@@ -1,0 +1,32 @@
+# The only account between the framework and the model-adaptation skill. Every caller reads the
+# capability it needs from here instead of assembling arguments of its own, so that replacing or
+# upgrading the skill changes this file and nothing else.
+#
+# A value of `str?` marks an optional input key. Output keys are checked for presence only: the
+# nested shapes below document what the skill returns, the framework does not re-derive them.
+version: 4
+skill: model-adaptation
+capabilities:
+  analyze_model_structure:        # F1 (out of scope here, declared for completeness)
+    input: {source_repo: path, source_commit: "str?"}
+    output:
+      components: []
+      entry_candidates: []
+      deps: []
+      assets: []
+      paper_refs: []
+  dissect_step:                   # F2 (out of scope here, declared for completeness)
+    input: {source_repo: path, components: []}
+    output:
+      segments: [{id: str, name: str, slots: [{slot: str, src: path, evidence: str}]}]
+      branches: [{id: str, enabled: bool, slots: []}]
+  adapt_dataset_pipeline:         # F4: how the original data pipeline lands in data/
+    input: {source_repo: path, target_data_root: path}
+    output:
+      plan: [{src: path, dst: path, action: str, notes: str}]
+status: [ok, partial, failed]     # `partial` must carry the list of what it did not cover
+rules:
+  - "the framework does not re-implement anything this skill covers: no repository scanning, no
+     component parsing, no step dissection, no data pipeline rewriting"
+  - "a response whose status is not `ok` stops the stage; `partial` additionally requires
+     `uncovered` to list what was left out"

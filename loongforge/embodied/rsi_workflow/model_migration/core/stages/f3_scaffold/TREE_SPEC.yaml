@@ -1,0 +1,118 @@
+# Where each slot lands in the target framework. This is the only file that knows the target
+# layout: switching to another target framework means editing `roots`, `slot_targets` and
+# `slot_templates` here, and nothing under core/stages/.
+#
+# `{model}` is the anatomy's model_tag, `{name}` the instance name of a multi-slot segment (two
+# vision towers, three action heads). The paths below are LoongForge's real embodied layout.
+version: 4
+target_framework: loongforge-embodied
+
+groups:
+  data:
+    roots: ["data/"]
+    segments: [S1]
+  model:
+    roots: ["model/"]
+    segments: [S0, S2, S3, S3.5, S4, S5, S6]
+    branches: [W, M, E-infer]
+  train:
+    roots: ["train/", "distributed/", "optimizer/", "eval/", "train.py"]
+    segments: [S7]
+    branches: [E-eval]
+
+slot_targets:
+  registry_slot:     "model/registry.py"
+  config_slot:       "model/{model}/model_configuration_{model}.py"
+  dataset_slot:      "data/datasets/{model}/{model}_dataset.py"
+  transform_slot:    "data/datasets/{model}/transforms/{model}_transform.py"
+  collator_slot:     "data/datasets/{model}/transforms/{model}_collator.py"
+  data_config_slot:  "data/datasets/{model}/transforms/data_configuration_{model}.py"
+  norm_stats_slot:   "data/datasets/compute_stats.py"
+  vision_slot:       "model/{model}/modules/vision_{name}.py"
+  backbone_slot:     "model/{model}/modules/backbone_{name}.py"
+  tokenizer_slot:    "model/{model}/modules/tokenizer_{name}.py"
+  attention_slot:    "model/{model}/modules/attention_{name}.py"
+  fused_ops_slot:    "model/{model}/modules/{name}_fused_ops.py"
+  main_slot:         "model/{model}/modeling_{model}.py"
+  action_head_slot:  "model/{model}/modules/action_{name}.py"
+  loss_slot:         "model/{model}/modules/loss_{name}.py"
+  perf_slot:         "model/{model}/modules/perf_{name}.py"
+  world_model_slot:  "model/{model}/modules/world_model_{name}.py"
+  video_vae_slot:    "model/{model}/modules/vae_{name}.py"
+  scheduler_slot:    "model/{model}/modules/flow_{name}_scheduler.py"
+  moe_router_slot:   "model/{model}/modules/moe_{name}.py"
+  infer_slot:        "model/{model}/modeling_{model}_infer.py"
+  entry_slot:        "train.py"
+  args_slot:         "train/training_args.py"
+  trainer_slot:      "train/trainers/{model}_trainer.py"
+  utils_slot:        "train/utils/utils.py"
+  optimizer_slot:    "optimizer/optimizer.py"
+  lr_scheduler_slot: "optimizer/lr_scheduler.py"
+  parallel_slot:     "distributed/parallel.py"
+  checkpoint_slot:   "distributed/checkpoint.py"
+  eval_slot:         "eval/factories/{model}_factory.py"
+
+slot_templates:
+  registry_slot:     "model/registry_slot.py.tmpl"
+  config_slot:       "model/config_slot.py.tmpl"
+  main_slot:         "model/main_slot.py.tmpl"
+  vision_slot:       "model/vision_slot.py.tmpl"
+  backbone_slot:     "model/backbone_slot.py.tmpl"
+  tokenizer_slot:    "model/tokenizer_slot.py.tmpl"
+  attention_slot:    "model/attention_slot.py.tmpl"
+  fused_ops_slot:    "model/fused_ops_slot.py.tmpl"
+  action_head_slot:  "model/action_head_slot.py.tmpl"
+  loss_slot:         "model/loss_slot.py.tmpl"
+  world_model_slot:  "model/world_model_slot.py.tmpl"
+  video_vae_slot:    "model/video_vae_slot.py.tmpl"
+  scheduler_slot:    "model/scheduler_slot.py.tmpl"
+  moe_router_slot:   "model/moe_router_slot.py.tmpl"
+  dataset_slot:      "data/dataset_slot.py.tmpl"
+  transform_slot:    "data/transform_slot.py.tmpl"
+  collator_slot:     "data/collator_slot.py.tmpl"
+  data_config_slot:  "data/data_config_slot.py.tmpl"
+  norm_stats_slot:   "data/norm_stats_slot.py.tmpl"
+  entry_slot:        "train/entry_slot.py.tmpl"
+  args_slot:         "train/args_slot.py.tmpl"
+  trainer_slot:      "train/trainer_slot.py.tmpl"
+  utils_slot:        "train/utils_slot.py.tmpl"
+  optimizer_slot:    "optimizer/optimizer_slot.py.tmpl"
+  lr_scheduler_slot: "optimizer/lr_scheduler_slot.py.tmpl"
+  parallel_slot:     "distributed/parallel_slot.py.tmpl"
+  checkpoint_slot:   "distributed/checkpoint_slot.py.tmpl"
+  infer_slot:        "infer/infer_slot.py.tmpl"
+  perf_slot:         "perf/perf_slot.py.tmpl"
+  eval_slot:         "eval/eval_slot.py.tmpl"
+
+# Framework-level files that belong to no slot. The structure judge ignores them, so they cannot
+# be used to fake coverage, and the scaffold creates the package markers among them.
+generic_files: ["__init__.py"]
+
+# Targets shared by every model in the target framework. A slot landing here must reuse the
+# existing implementation (action `wrap` or `adapt`), never overwrite it with a rewritten copy:
+# these files already carry the other embodied models.
+shared_targets:
+  - "model/registry.py"
+  - "data/datasets/compute_stats.py"
+  - "train.py"
+  - "train/training_args.py"
+  - "train/utils/utils.py"
+  - "optimizer/optimizer.py"
+  - "optimizer/lr_scheduler.py"
+  - "distributed/parallel.py"
+  - "distributed/checkpoint.py"
+
+rules:
+  - "exactly one target file per slot; two slots may not share a file"
+  - "a required segment (S0-S7, S3.5 excepted) missing from the anatomy is a failure"
+  - "an optional branch that did not hit leaves no file, but the anatomy records why"
+  - "an existing file is never overwritten by the scaffold: reuse beats rewrite"
+  - "E is two independent branches, because its two halves live on different sides and hit
+     independently: E-infer is the inference entry, next to the trained modules under model/;
+     E-eval is the evaluation assembly under eval/. Most embodied models hit E-eval only."
+  - "E-infer hits when inference needs state, modules or schedules training does not have
+     (per-episode rollout state, a KV cache, a frozen VAE or text encoder, a sampling schedule).
+     When inference is only pre- and post-processing around the training forward, it stays inside
+     modeling_{model}.py: E-infer records enabled: false with that reason and travels with
+     main_slot, since two slots may not share one file."
+

@@ -1,0 +1,26 @@
+# Field and rule specification of the F4 mapping table. The mapping is per slot, not per file:
+# one entry owns exactly one slot of exactly one segment.
+version: 4
+fields:
+  seg:    {type: string}                              # S0-S7 / S3.5 / W / M / E-infer / E-eval
+  slot:   {type: string}                              # slot id, as in SLOT_CATALOG.yaml
+  name:   {type: string, optional: true}              # instance name of a multi-slot segment
+  src:    {type: path}                                # source location: file, or file plus symbol
+  dst:    {type: path}                                # target location, as in TREE_SPEC.yaml
+  action: {enum: [copy, adapt, wrap, reimplement]}
+  reason: {type: string}                              # why this action and not another
+
+actions:
+  copy:        "logic and interface both already match: move it verbatim and record the origin"
+  adapt:       "same logic, different names, imports or base class: rewrite those, not the maths"
+  wrap:        "the target framework already has an equivalent: call it, keep the original interface"
+  reimplement: "the original is bound to its own stack: rewrite to the target structure, with a reason"
+
+rules:
+  - "src and dst must match STEP_ANATOMY.yaml verbatim; a write may not relocate a slot"
+  - "every entry belongs to exactly one segment and one slot"
+  - "dst must be declared in TREE_SPEC.slot_targets"
+  - "a dst in TREE_SPEC.shared_targets must use `wrap` or `adapt`: the shared files of the target
+     framework already carry the other embodied models and are reused, never overwritten"
+  - "`reimplement` must state in `reason` what the original stack bound it to, and the report must
+     list where the rewrite differs from the original"

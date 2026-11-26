@@ -1,0 +1,172 @@
+# F4 mapping table. Written per task by map/build_mapping.py and overwritten on every build;
+# the copy kept here is the one produced from examples/sample_vla, so the field shapes -- including
+# what `wrap` needs under `reuse` -- can be read without running the stage first.
+# See map/MAPPING_SCHEMA.yaml for the rules every entry has to satisfy.
+version: 4
+model_tag: sample_vla
+source:
+  repo: <original VLA repository>
+  commit: <commit>
+entries:
+- seg: S0
+  slot: registry_slot
+  src: src/registry.py
+  dst: model/registry.py
+  action: adapt
+  reason: add one entry to the shared registry; the registration decorator differs
+- seg: S0
+  slot: config_slot
+  src: src/configuration.py
+  dst: model/sample_vla/model_configuration_sample_vla.py
+  action: adapt
+  reason: same fields, target framework naming and dataclass conventions
+- seg: S1
+  slot: dataset_slot
+  src: src/data/dataset.py
+  dst: data/datasets/sample_vla/sample_vla_dataset.py
+  action: adapt
+  reason: same reading logic, target framework dataset base class
+- seg: S1
+  slot: transform_slot
+  src: src/data/transforms.py
+  dst: data/datasets/sample_vla/transforms/sample_vla_transform.py
+  action: adapt
+  reason: same transform chain, placed per the model-adaptation dataset plan
+- seg: S1
+  slot: collator_slot
+  src: src/data/collate.py
+  dst: data/datasets/sample_vla/transforms/sample_vla_collator.py
+  action: copy
+  reason: logic and interface already match
+- seg: S1
+  slot: data_config_slot
+  src: src/data/config.py
+  dst: data/datasets/sample_vla/transforms/data_configuration_sample_vla.py
+  action: adapt
+  reason: same configuration, target framework config conventions
+- seg: S1
+  slot: norm_stats_slot
+  src: src/data/compute_stats.py
+  dst: data/datasets/compute_stats.py
+  action: adapt
+  reason: shared statistics tool; add this model, keep the existing models working
+- seg: S2
+  slot: vision_slot
+  src: src/models/vision/siglip2.py
+  dst: model/sample_vla/modules/vision_siglip2.py
+  action: adapt
+  reason: same encoder, imports and base class replaced by target framework equivalents
+  name: siglip2
+- seg: S3
+  slot: backbone_slot
+  src: src/models/llm/qwen2_5.py
+  dst: model/sample_vla/modules/backbone_qwen2_5.py
+  action: wrap
+  reason: the target framework already implements this backbone; reuse it
+  name: qwen2_5
+  reuse:
+    module: loongforge.embodied.model.wall_oss_0_5.qwen2_5
+    exports:
+    - Qwen2_5Model
+    alias:
+      Qwen2_5Model: Qwen2Backbone
+- seg: S3
+  slot: tokenizer_slot
+  src: src/models/llm/prompt.py
+  dst: model/sample_vla/modules/tokenizer_qwen2_5.py
+  action: adapt
+  reason: prompt construction is model specific; only the imports change
+  name: qwen2_5
+- seg: S4
+  slot: main_slot
+  src: src/models/model.py
+  dst: model/sample_vla/modeling_sample_vla.py
+  action: adapt
+  reason: same forward order, module construction follows the target framework
+- seg: S5
+  slot: action_head_slot
+  src: src/models/action/dit.py
+  dst: model/sample_vla/modules/action_dit.py
+  action: adapt
+  reason: same action branch, target framework layer imports
+  name: dit
+- seg: S6
+  slot: loss_slot
+  src: src/models/loss.py
+  dst: model/sample_vla/modules/loss_rectified_flow.py
+  action: copy
+  reason: the objective is self-contained; the loss is what F5 compares, so keep it exact
+  name: rectified_flow
+- seg: S7
+  slot: trainer_slot
+  src: src/train/trainer.py
+  dst: train/trainers/sample_vla_trainer.py
+  action: adapt
+  reason: same step order, target framework trainer base class
+- seg: S7
+  slot: optimizer_slot
+  src: src/train/optim.py
+  dst: optimizer/optimizer.py
+  action: wrap
+  reason: the framework optimizer is equivalent; the wrapper keeps the original parameter groups and hyper-parameter
+    semantics
+  reuse:
+    module: loongforge.embodied.optimizer.optimizer
+    exports:
+    - build_optimizer
+    alias:
+      build_optimizer: create_optimizer
+- seg: S7
+  slot: lr_scheduler_slot
+  src: src/train/schedule.py
+  dst: optimizer/lr_scheduler.py
+  action: wrap
+  reason: the framework schedule is equivalent; warmup is passed through
+  reuse:
+    module: loongforge.embodied.optimizer.lr_scheduler
+    exports:
+    - build_lr_scheduler
+    alias:
+      build_lr_scheduler: create_scheduler
+- seg: S7
+  slot: parallel_slot
+  src: src/train/distributed.py
+  dst: distributed/parallel.py
+  action: wrap
+  reason: reuse the framework DDP/FSDP strategies instead of porting one
+  reuse:
+    module: loongforge.embodied.distributed.parallel
+    exports:
+    - setup_parallel
+    alias:
+      setup_parallel: init_distributed
+- seg: S7
+  slot: checkpoint_slot
+  src: src/train/checkpoint.py
+  dst: distributed/checkpoint.py
+  action: wrap
+  reason: reuse the framework checkpoint layer; renames live in F4 weights/
+  reuse:
+    module: loongforge.embodied.distributed.checkpoint
+    exports:
+    - load_checkpoint
+    - save_checkpoint
+- seg: E-infer
+  slot: infer_slot
+  src: src/infer/serve.py
+  dst: model/sample_vla/modeling_sample_vla_infer.py
+  action: reimplement
+  reason: the original inference path is bound to its own serving stack
+- seg: E-eval
+  slot: eval_slot
+  src: src/eval/libero_env.py
+  dst: eval/factories/sample_vla_factory.py
+  action: wrap
+  reason: assemble from the framework's eval factories and action decoders instead of porting the original
+    harness
+  reuse:
+    module: loongforge.embodied.eval.factories.registry
+    exports:
+    - register_factory
+    alias:
+      register_factory: register_env
