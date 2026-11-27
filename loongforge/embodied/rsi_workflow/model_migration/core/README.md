@@ -1,15 +1,36 @@
 # Core
 
-The core-code directory of the model-migration workspace, and the main part of the migration work. It concentrates the RSI (Robust Self-Improvement / Recurrent Self-Improvement) implementations, including the sandbox, templates, and scheduling/control.
-
-## Responsibilities
-
-- **Sandbox**: provides an isolated, controlled execution environment for model migration, format conversion, and other operations, preventing side effects of the migration from polluting the repository or the host environment.
-- **Templates**: provides reusable code and configuration templates for wiring a model into LoongForge, so that migration outputs structurally follow LoongForge conventions.
-- **Scheduling & Control**: the driving core of the RSI workflow. It is responsible for task decomposition, step scheduling, skill invocation, and state management, chaining `skills`, `validate`, and other modules into a complete migration loop.
+Shared strict contracts and immutable artifact sealing primitives for the 6-stage embodied adaptation pipeline.
 
 ## Contents
 
-- Sandbox: environment creation, dependency injection, isolated execution, and cleanup.
-- Templates: reusable templates for model configuration, model implementation, data integration, and launch scripts.
-- Scheduling: task description parsing, step orchestration, skill dispatch, and result aggregation.
+- `contracts/`: strict Pydantic v2 models (`intake`, `anatomy`, `stage`, `verdict`, `handoff`, plus backwards-compatible `f1`/`f2` exports), YAML unique-key loader, and `PipelineProfile` validator.
+- `contracts/schema.py`: JSON Schema exporter (`artifact-manifest`, `f1-task-pack`, `f2-behavior-contract`, `handoff-result`, `stage-spec`, `gate-result`, `gate-decision`).
+- `contracts/errors.py`: structured parse and validation error types.
+- `artifacts.py`: staging → atomic release `publish()` and full manifest/digest/symlink `verify()`.
+
+Run CPU tests with:
+
+```bash
+python3 -m pytest -q
+```
+
+## Canonical package layout
+
+```text
+core/
+  __init__.py         # empty: no transitive Pydantic imports for orchestrator
+  artifacts.py
+  contracts/         # v1 contracts + versioned v2 Intake handoff
+  orchestrator/      # stdlib + PyYAML graph/scheduler/judger
+  profiles/
+  rsi/
+  stages/
+    base.py
+    f1_intake/
+    f2_anatomy/
+    f3_scaffold/
+    f4_adapt/
+    f5_verify/       # orchestration only; concrete checkers in ../validate/
+    f6_deliver/
+```
