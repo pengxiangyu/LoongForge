@@ -25,7 +25,7 @@ def _linear_graph(*, anatomy_hash: str = "v1") -> ExecutionGraph:
                 content_hash=anatomy_hash,
             ),
             Node(id="scaffold", stage="scaffold", depends_on=("anatomy",), content_hash="v1"),
-            Node(id="verify", stage="verify", depends_on=("scaffold",), content_hash="v1"),
+            Node(id="align", stage="align", depends_on=("scaffold",), content_hash="v1"),
         ],
         graph_id="linear",
     )
@@ -65,7 +65,7 @@ def test_scheduler_executes_dag_in_order_and_persists_atomic_checkpoints(
     )
     final_state = scheduler.run(executor)
 
-    assert executed == ["intake", "anatomy", "scaffold", "verify"]
+    assert executed == ["intake", "anatomy", "scaffold", "align"]
     assert all(
         final_state.status_of(node_id) == NodeStatus.DONE
         for node_id in graph.topological_ids()
@@ -84,7 +84,7 @@ def test_scheduler_blocks_downstream_nodes_on_failure_and_keeps_independent_bran
             Node(id="root", stage="intake"),
             Node(id="branch_fail", stage="anatomy", depends_on=("root",)),
             Node(id="downstream", stage="scaffold", depends_on=("branch_fail",)),
-            Node(id="branch_ok", stage="verify", depends_on=("root",)),
+            Node(id="branch_ok", stage="align", depends_on=("root",)),
         ],
         graph_id="branching",
     )
@@ -160,12 +160,12 @@ def test_scheduler_resumes_from_crash_checkpoint_and_skips_done_nodes(
     final_state = resumed.run(executor)
 
     # `intake` was already DONE and must NOT re-execute.
-    assert executed == ["anatomy", "scaffold", "verify"]
+    assert executed == ["anatomy", "scaffold", "align"]
     assert final_state.nodes["intake"].attempts == 1
     assert final_state.nodes["anatomy"].attempts == 2
     assert final_state.nodes["intake"].output == {"artifact": "intake-v1"}
     persisted = json.loads(checkpoint.read_text(encoding="utf-8"))
-    assert persisted["nodes"]["verify"]["status"] == "done"
+    assert persisted["nodes"]["align"]["status"] == "done"
 
 
 def test_invalidate_propagates_transitively_and_reruns_all_downstream_nodes(
@@ -183,15 +183,15 @@ def test_invalidate_propagates_transitively_and_reruns_all_downstream_nodes(
         return NodeRunResult(status=NodeStatus.DONE, output={"v": version["n"]})
 
     scheduler.run(executor)
-    assert ran_first == ["intake", "anatomy", "scaffold", "verify"]
+    assert ran_first == ["intake", "anatomy", "scaffold", "align"]
 
     rev_before = scheduler.state.revision
     reset = scheduler.invalidate(["anatomy"])
-    assert reset == ["anatomy", "scaffold", "verify"]
+    assert reset == ["anatomy", "scaffold", "align"]
     # Single atomic persist for the entire transitive batch.
     assert scheduler.state.revision == rev_before + 1
     assert scheduler.state.status_of("intake") == NodeStatus.DONE
-    for nid in ("anatomy", "scaffold", "verify"):
+    for nid in ("anatomy", "scaffold", "align"):
         assert scheduler.state.status_of(nid) == NodeStatus.PENDING
         assert scheduler.state.nodes[nid].output == {}
 
@@ -205,9 +205,9 @@ def test_invalidate_propagates_transitively_and_reruns_all_downstream_nodes(
         return NodeRunResult(status=NodeStatus.DONE, output={"v": version["n"]})
 
     final_state = scheduler.run(executor_v2)
-    assert ran_second == ["anatomy", "scaffold", "verify"]
+    assert ran_second == ["anatomy", "scaffold", "align"]
     assert final_state.nodes["intake"].output == {"v": 1}
-    for nid in ("anatomy", "scaffold", "verify"):
+    for nid in ("anatomy", "scaffold", "align"):
         assert final_state.nodes[nid].output == {"v": 2}
 
     with pytest.raises(TypeError):
@@ -234,12 +234,12 @@ def test_blocked_downstream_recomputes_when_upstream_recovers_via_retry_failed(
     assert state1.status_of("intake") == NodeStatus.DONE
     assert state1.status_of("anatomy") == NodeStatus.FAILED
     assert state1.status_of("scaffold") == NodeStatus.BLOCKED
-    assert state1.status_of("verify") == NodeStatus.BLOCKED
+    assert state1.status_of("align") == NodeStatus.BLOCKED
 
     should_fail["anatomy"] = False
     ran.clear()
     state2 = scheduler.run(executor, retry_failed=True)
-    assert ran == ["anatomy", "scaffold", "verify"]
+    assert ran == ["anatomy", "scaffold", "align"]
     assert all(
         state2.status_of(nid) == NodeStatus.DONE for nid in graph.topological_ids()
     )
@@ -268,7 +268,7 @@ def test_checkpoint_fingerprint_mismatch_fails_closed_by_default_and_replans_whe
     assert s2.state.status_of("intake") == NodeStatus.DONE
     assert s2.state.status_of("anatomy") == NodeStatus.PENDING
     assert s2.state.status_of("scaffold") == NodeStatus.PENDING
-    assert s2.state.status_of("verify") == NodeStatus.PENDING
+    assert s2.state.status_of("align") == NodeStatus.PENDING
 
     ran: list[str] = []
     s2.run(
@@ -277,9 +277,9 @@ def test_checkpoint_fingerprint_mismatch_fails_closed_by_default_and_replans_whe
             NodeRunResult(output={"ver": 2}),
         )[1]
     )
-    assert ran == ["anatomy", "scaffold", "verify"]
+    assert ran == ["anatomy", "scaffold", "align"]
     assert s2.state.nodes["intake"].output == {"ver": 1}
-    assert s2.state.nodes["verify"].output == {"ver": 2}
+    assert s2.state.nodes["align"].output == {"ver": 2}
 
 
 def test_checkpoint_replan_handles_added_and_removed_nodes(tmp_path: Path) -> None:
@@ -288,7 +288,7 @@ def test_checkpoint_replan_handles_added_and_removed_nodes(tmp_path: Path) -> No
         [
             Node(id="intake", stage="intake", content_hash="v1"),
             Node(id="anatomy", stage="anatomy", depends_on=("intake",), content_hash="v1"),
-            Node(id="obsolete", stage="verify", depends_on=("anatomy",), content_hash="v1"),
+            Node(id="obsolete", stage="align", depends_on=("anatomy",), content_hash="v1"),
         ],
         graph_id="evolving",
     )

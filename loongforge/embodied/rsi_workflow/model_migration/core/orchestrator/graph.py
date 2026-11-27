@@ -21,9 +21,8 @@ VALID_STAGES: frozenset[str] = frozenset(
         "intake",
         "anatomy",
         "scaffold",
-        "adapt",
-        "verify",
-        "deliver",
+        "migrate",
+        "align",
     }
 )
 GROUP_STAGE = "group"

@@ -1,4 +1,4 @@
-"""Alignment gate: does the migrated project reproduce the original model's loss, step by step.
+"""Numeric gate: does the migrated project reproduce the original model's loss, step by step.
 
 The gate takes the two traces and the threshold file and returns a verdict. It never widens a
 limit: `thresholds.yaml` is the single source of the judgement, and when the gate fails the
@@ -12,7 +12,11 @@ Three ways to fail, in the order they are checked:
   no_amplify   the deviation must not grow along the trajectory, even inside the limits.
 
 `evaluate` works on already-loaded dicts so that the frozen copy of this module stays free of
-any dependency on the framework's YAML specs; the CLI below does the file reading.
+any dependency on the framework's YAML specs.
+
+This is the only place the numeric verdict is defined. `parity_check` judges migration parity
+with it and `train_resume_check` judges post-resume continuity with it; neither re-derives a
+deviation of its own.
 """
 from . import stats
 

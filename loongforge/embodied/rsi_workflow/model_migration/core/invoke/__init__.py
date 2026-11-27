@@ -19,6 +19,7 @@ exactly there.
 import hashlib
 import json
 from pathlib import Path
+from typing import Literal, TypeAlias
 
 from .check_contract import check_input, check_output, load_contract
 
@@ -26,6 +27,15 @@ PENDING = 4
 CONTRACTS = {'model-adaptation': 'CONTRACT_model_adaptation.yaml',
              'precision-alignment': 'CONTRACT_precision_alignment.yaml'}
 INVOKE_DIR = Path(__file__).resolve().parent
+
+# The skill names the framework may pin. The two with contracts above are mounted under
+# `skills/`; `vla-model-eval-adapter` is an optional external playbook with no contract here, so
+# it can be referenced by a handoff but not called through `call()`.
+EmbodiedSkillName: TypeAlias = Literal[
+    'model-adaptation',
+    'precision-alignment',
+    'vla-model-eval-adapter',
+]
 
 
 class PendingSkillCall(Exception):

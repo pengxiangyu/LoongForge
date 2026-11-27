@@ -102,6 +102,66 @@ shared_targets:
   - "distributed/parallel.py"
   - "distributed/checkpoint.py"
 
+# Which segment each slot belongs to. The generator does not need this (it reads the anatomy),
+# but `plan_to_anatomy` does: the F1 handoff reports slots per extension point, and placing them
+# back into segments is a layout question, so the answer lives here with the rest of the layout.
+slot_segments:
+  registry_slot:     S0
+  config_slot:       S0
+  dataset_slot:      S1
+  transform_slot:    S1
+  collator_slot:     S1
+  data_config_slot:  S1
+  norm_stats_slot:   S1
+  vision_slot:       S2
+  backbone_slot:     S3
+  tokenizer_slot:    S3
+  attention_slot:    S3.5
+  fused_ops_slot:    S3.5
+  main_slot:         S4
+  action_head_slot:  S5
+  loss_slot:         S6
+  perf_slot:         S7
+  entry_slot:        S7
+  args_slot:         S7
+  trainer_slot:      S7
+  utils_slot:        S7
+  optimizer_slot:    S7
+  lr_scheduler_slot: S7
+  parallel_slot:     S7
+  checkpoint_slot:   S7
+  world_model_slot:  W
+  video_vae_slot:    W
+  scheduler_slot:    W
+  moe_router_slot:   M
+  infer_slot:        E-infer
+  eval_slot:         E-eval
+
+# The target framework's six extension points, and which slots each one owns. This is the axis
+# the F1 analysis handoff reports on (`slot_catalog.yaml` / `slot_hits.json`); the segment axis
+# above is the one the structure judge uses. Both describe the same slots.
+extension_points:
+  model_registry:
+    side: model
+    slots: [registry_slot, config_slot, main_slot, vision_slot, backbone_slot, tokenizer_slot,
+            attention_slot, fused_ops_slot, action_head_slot, loss_slot, perf_slot,
+            world_model_slot, video_vae_slot, scheduler_slot, moe_router_slot, infer_slot]
+  data_and_transforms:
+    side: data
+    slots: [dataset_slot, transform_slot, collator_slot, data_config_slot, norm_stats_slot]
+  config_map:
+    side: train
+    slots: [args_slot]
+  trainer_builder:
+    side: train
+    slots: [trainer_slot, optimizer_slot, lr_scheduler_slot, parallel_slot, checkpoint_slot]
+  eval_adapter:
+    side: train
+    slots: [eval_slot]
+  regression_runner:
+    side: train
+    slots: [entry_slot, utils_slot]
+
 rules:
   - "exactly one target file per slot; two slots may not share a file"
   - "a required segment (S0-S7, S3.5 excepted) missing from the anatomy is a failure"

@@ -1,6 +1,6 @@
 # Core
 
-Shared strict contracts and immutable artifact sealing primitives for the 6-stage embodied adaptation pipeline.
+Shared strict contracts and immutable artifact sealing primitives for the 5-stage embodied adaptation pipeline.
 
 ## Contents
 
@@ -24,13 +24,11 @@ core/
   contracts/         # v1 contracts + versioned v2 Intake handoff
   orchestrator/      # stdlib + PyYAML graph/scheduler/judger
   profiles/
-  rsi/
   stages/
     base.py
     f1_intake/
     f2_anatomy/
     f3_scaffold/
-    f4_adapt/
-    f5_verify/       # orchestration only; concrete checkers in ../validate/
-    f6_deliver/
+    f4_migrate/
+    f5_align/        # orchestration only; concrete judges in ../validate/
 ```

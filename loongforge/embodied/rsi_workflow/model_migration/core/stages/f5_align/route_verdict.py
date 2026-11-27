@@ -46,7 +46,7 @@ def work_log(decision, path):
 
 
 def main(argv=None):
-    p = argparse.ArgumentParser(prog='align_gate.py', description=__doc__)
+    p = argparse.ArgumentParser(prog='route_verdict.py', description=__doc__)
     p.add_argument('--gate-report', required=True, help='report from `python -m validate align`')
     p.add_argument('--compare-result', help='compare_and_analyze result, input to propose_fix')
     p.add_argument('--workdir', required=True, help='work/<task_id>')

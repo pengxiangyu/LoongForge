@@ -20,7 +20,7 @@ def relative_diffs(src, tgt, eps=1e-12):
     """Per-step relative deviation of two {step: loss} maps, ordered by step.
 
     Only steps present in both traces are used; the caller is responsible for checking that
-    the traces cover the same steps (align_gate does).
+    the traces cover the same steps (numeric_gate does).
     """
     return [(step, abs(src[step] - tgt[step]) / max(abs(src[step]), eps))
             for step in sorted(set(src) & set(tgt))]

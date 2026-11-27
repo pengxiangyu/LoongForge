@@ -1,6 +1,6 @@
 # Core
 
-6 阶段具身模型适配流水线的公共严格契约与不可变包封存基础库。
+5 阶段具身模型适配流水线的公共严格契约与不可变包封存基础库。
 
 ## 模块说明
 
@@ -24,13 +24,11 @@ core/
   contracts/         # v1 contracts + versioned v2 Intake handoff
   orchestrator/      # stdlib + PyYAML graph/scheduler/judger
   profiles/
-  rsi/
   stages/
     base.py
     f1_intake/
     f2_anatomy/
     f3_scaffold/
-    f4_adapt/
-    f5_verify/       # orchestration only; concrete checkers in ../validate/
-    f6_deliver/
+    f4_migrate/
+    f5_align/        # 只做编排；具体判决在 ../validate/
 ```

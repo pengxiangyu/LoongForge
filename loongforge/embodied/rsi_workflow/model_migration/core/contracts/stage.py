@@ -1,4 +1,4 @@
-"""Stage specification contracts for the 6-stage pipeline."""
+"""Stage specification contracts for the migration pipeline."""
 
 from __future__ import annotations
 
@@ -14,9 +14,8 @@ StageName: TypeAlias = Literal[
     "intake",
     "anatomy",
     "scaffold",
-    "adapt",
-    "verify",
-    "deliver",
+    "migrate",
+    "align",
 ]
 
 

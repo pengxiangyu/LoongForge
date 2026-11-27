@@ -16,10 +16,26 @@
 
 ## Implemented checker boundary
 
-`IntakeChecker` and `AnatomyChecker` independently verify sealed artifacts;
-`base.py` contains the checker protocol and source-digest helper.
-`VerifyStageRunner` lives in `core/stages/f5_verify/`, not in this directory.
-Other checker classes remain explicit placeholders, not accepted validation.
+六个 checker 全部实装，各自只判一个问题：
+
+- `IntakeChecker` / `AnatomyChecker` —— 独立复验各自的封存包。
+- `ConstructChecker` —— slot 与目标文件的一一对应、必需 segment、权重覆盖；委托冻结的
+  structure judge。
+- `ParityChecker` —— 迁移前后的逐 step loss 偏差；委托冻结的 numeric gate。
+- `TrainResumeChecker` —— 存档→续训是否改变了轨迹。边界之前的 step 必须完全一致（权重相同、
+  采样顺序相同）；边界之后交给同一个冻结 numeric gate 判。
+- `EvalChecker` —— 闭环评测报告是否完备（model factory / payload builder / action decoder
+  三者都有证据）、每个 task 都有数值指标、且相对基线没有退化。它不跑仿真器，判的是报告。
+
+`numeric_gate` 是数值判决的唯一定义处，`ParityChecker` 与 `TrainResumeChecker` 都调用它，
+不各自再推一遍偏差。
+`base.py` 提供 checker 协议与源码摘要助手，`gate_runner.py` 以 fail-closed 方式聚合，
+`accept_gate.py` 判定最终验收。
+
+复合 validator 哈希绑定 checker 源码路径、`validate/base.py`、
+`core/orchestrator/judger.py` 以及声明的依赖源码 —— 包含 checker 委托的那个冻结 judge，
+所以换上一个更宽松的 judge 会改变哈希。
+v2 与模型相关检查见 `../docs/intake-v2-handoff.md` 与 `../docs/anatomy-spec.md`。
 
 The composite validator hash binds checker source paths, `validate/base.py`,
 `core/orchestrator/judger.py` and declared dependency sources.

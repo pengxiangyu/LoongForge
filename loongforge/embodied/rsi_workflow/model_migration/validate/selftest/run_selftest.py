@@ -3,7 +3,7 @@
 Two families of cases, both declaring the verdict they must receive:
 
   alignment  a pair of loss traces, read from `core/stages/f5_align/cases/` by default, judged
-             by the frozen alignment gate with the frozen thresholds.
+             by the frozen numeric gate with the frozen thresholds.
   structure  an anatomy plus the file list of a tree, materialised in a temporary directory and
              judged by the frozen structure judge.
 
@@ -26,9 +26,9 @@ def _thresholds():
 
 
 def _align_case(case, thresholds):
-    from ..frozen import align_gate_frozen
+    from ..frozen import numeric_gate_frozen
     from ..trajectory import losses
-    report = align_gate_frozen.evaluate(losses(case['src']), losses(case['tgt']), thresholds)
+    report = numeric_gate_frozen.evaluate(losses(case['src']), losses(case['tgt']), thresholds)
     return report['verdict'], report['problems']
 
 

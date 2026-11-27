@@ -1,6 +1,6 @@
 # LoongForge Embodied Model Adaptation RSI Framework
 
-A 6-stage deterministic orchestration and verification framework (`intake` → `anatomy` → `scaffold` → `adapt` → `verify` → `deliver`, plus outer-loop `rsi`) for adapting open-source embodied/VLA models into [`baidu-baige/LoongForge`](https://github.com/baidu-baige/LoongForge).
+A 5-stage deterministic orchestration framework (`intake` → `anatomy` → `scaffold` → `migrate` → `align`) with a separate validation layer, for adapting open-source embodied/VLA models into [`baidu-baige/LoongForge`](https://github.com/baidu-baige/LoongForge). Acceptance is a verdict, not a sixth stage: `validate/accept_gate.py` aggregates the four gates.
 
 ## Architecture & Implementation Status
 
@@ -10,9 +10,9 @@ A 6-stage deterministic orchestration and verification framework (`intake` → `
 | `core/orchestrator/` | Stdlib + PyYAML DAG orchestration kernel (`graph`, `scheduler` with atomic checkpoint/resume/replan, `invalidation`, `isolation`, deterministic `judger`) | Implemented |
 | `core/stages/f1_intake/` | Stage 1: Git commit/tree/recursive submodule lock, offline `git bundle` archive/restore, pinned-tree AST discovery, read-only asset triage (`WAITING_ASSET`/`blocked`), isolated startup probe, atomic freeze & CLI | Implemented (CPU + `openpi` dry-run verified) |
 | `core/stages/f2_anatomy/` | Stage 2: Verified intake handoff, dual-subprocess single-step capture & replay, 4-tier weight snapshot diff, behavior contract & observation plan, `FakeStepAdapter` + `OpenPIJaxAdapter` skeleton | Implemented (offline CPU fake closed-loop; GPU smoke pending assets/hardware) |
-| `validate/` | Independent checkers (`IntakeChecker`, `AnatomyChecker` implemented; `Construct`/`Parity`/`TrainResume`/`Eval` placeholders); orchestration lives in `core/stages/f5_verify/` | Stage 1 & 2 implemented |
-| `core/stages/{f3_scaffold,f4_adapt,f6_deliver}/` & `core/rsi/` | Contracts and protocol placeholders targeting LoongForge's 6 extension points, 3 embodied Skills, and outer-loop RSI | Interfaces & placeholders ready |
-| `core/profiles/loongforge_embodied.yaml` | Declarative 6-stage DAG, LoongForge 6 extension-point mapping, 3 core embodied Skills, and 5 stateless deterministic tools | Configured & validated |
+| `validate/` | Independent judges and checkers, all six implemented: `IntakeChecker`, `AnatomyChecker`, `ConstructChecker` (frozen structure judge), `ParityChecker` (frozen numeric gate), `TrainResumeChecker` (save/resume continuity), `EvalChecker` (closed-loop report). Aggregation via `GateRunner`, acceptance via `accept_gate.py` | All gates implemented |
+| `core/stages/{f3_scaffold,f4_migrate,f5_align}/` | Stage 3 generates the skeleton from `TREE_SPEC.yaml`, stage 4 writes the original implementation slot by slot through four writers, stage 5 drives the comparison and routes the verdict | Implemented |
+| `core/profiles/loongforge_embodied.yaml` | Declarative 5-stage DAG, LoongForge 6 extension-point mapping, 3 core embodied Skills, and 5 stateless deterministic tools | Configured & validated |
 
 ## Quick Verification
 

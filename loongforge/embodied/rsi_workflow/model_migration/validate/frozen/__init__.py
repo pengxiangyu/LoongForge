@@ -6,5 +6,6 @@ changed, the judge refuses to produce a verdict instead of producing a lenient o
 limit is therefore not a thing a migration can do quietly — it shows up as a broken lock.
 
 The closure is the two judges plus everything they import plus the threshold file:
-structure_judge.py, align_gate.py (copied as align_gate_frozen.py), stats.py, thresholds.yaml.
+structure_judge.py, numeric_gate.py (copied as numeric_gate_frozen.py), stats.py,
+thresholds.yaml.
 """

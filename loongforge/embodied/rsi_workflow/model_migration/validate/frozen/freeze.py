@@ -16,9 +16,9 @@ from pathlib import Path
 
 FROZEN_DIR = Path(__file__).resolve().parent
 LIVE_DIR = FROZEN_DIR.parent
-# live name -> frozen name; the frozen align gate is renamed so the two are never confused.
+# live name -> frozen name; the frozen numeric gate is renamed so the two are never confused.
 CLOSURE = {'structure_judge.py': 'structure_judge.py',
-           'align_gate.py': 'align_gate_frozen.py',
+           'numeric_gate.py': 'numeric_gate_frozen.py',
            'stats.py': 'stats.py',
            'thresholds.yaml': 'thresholds.yaml'}
 LOCK = FROZEN_DIR / 'JUDGE_LOCK.json'

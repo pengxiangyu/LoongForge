@@ -21,31 +21,31 @@ def test_nested_dag_parses_flattens_and_inherits_group_dependencies() -> None:
                     "children": [
                         {"id": "scaffold", "stage": "scaffold"},
                         {
-                            "id": "adapt",
-                            "stage": "adapt",
+                            "id": "migrate",
+                            "stage": "migrate",
                             "depends_on": ["scaffold"],
                         },
                     ],
                 },
                 {
-                    "id": "verify",
-                    "stage": "verify",
+                    "id": "align",
+                    "stage": "align",
                     "depends_on": ["adapt_group"],
                 },
             ],
         }
     )
 
-    assert graph.topological_ids() == ("intake", "scaffold", "adapt", "verify")
+    assert graph.topological_ids() == ("intake", "scaffold", "migrate", "align")
     assert [node.id for node in graph.flatten()] == [
         "intake",
         "scaffold",
-        "adapt",
-        "verify",
+        "migrate",
+        "align",
     ]
     assert graph.dependencies_of("scaffold") == ("intake",)
-    assert graph.dependencies_of("adapt") == ("intake", "scaffold")
-    assert graph.dependencies_of("verify") == ("scaffold", "adapt")
+    assert graph.dependencies_of("migrate") == ("intake", "scaffold")
+    assert graph.dependencies_of("align") == ("scaffold", "migrate")
     assert graph.parent_of("scaffold") == "adapt_group"
     assert graph.parent_of("intake") is None
 
@@ -108,7 +108,7 @@ def test_group_cycle_and_unknown_dependency_are_rejected() -> None:
     assert group_cycle.value.reason_code == "CYCLE_DETECTED"
 
 
-def test_default_loongforge_embodied_profile_loads_as_valid_6_stage_dag() -> None:
+def test_default_loongforge_embodied_profile_loads_as_valid_5_stage_dag() -> None:
     profile_path = REPO_ROOT / "core" / "profiles" / "loongforge_embodied.yaml"
     graph = ExecutionGraph.from_yaml(profile_path)
 
@@ -117,9 +117,8 @@ def test_default_loongforge_embodied_profile_loads_as_valid_6_stage_dag() -> Non
         "intake",
         "anatomy",
         "scaffold",
-        "adapt",
-        "verify",
-        "deliver",
+        "migrate",
+        "align",
     )
 
 

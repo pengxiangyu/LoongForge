@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "loongforge-model-migration-rsi"
 version = "0.1.0"
-description = "6-stage embodied model adaptation RSI framework targeting LoongForge (intake, anatomy, scaffold, adapt, verify, deliver)"
+description = "5-stage embodied model adaptation RSI framework targeting LoongForge (intake, anatomy, scaffold, migrate, align) with a separate validation layer"
 requires-python = ">=3.11"
 dependencies = [
   "pydantic>=2.10,<3",

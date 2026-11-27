@@ -45,13 +45,14 @@ def _append(path, round_report):
 
 
 def judge(src_trace_path, tgt_trace_path, thresholds):
-    from validate.frozen import align_gate_frozen, freeze
+    from validate.frozen import freeze, numeric_gate_frozen
     freeze.require_unlocked_judges()
     src, tgt = trajectory.load(src_trace_path), trajectory.load(tgt_trace_path)
     same = check(trajectory.run_meta(src), trajectory.run_meta(tgt))
     if not same['ok']:
         return {'verdict': 'ERROR', 'problems': same['problems'], 'four_same': same}, same
-    gate = align_gate_frozen.evaluate(trajectory.losses(src), trajectory.losses(tgt), thresholds)
+    gate = numeric_gate_frozen.evaluate(trajectory.losses(src), trajectory.losses(tgt),
+                                        thresholds)
     gate['four_same'] = same
     return gate, same
 

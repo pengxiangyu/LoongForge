@@ -1,4 +1,3 @@
-from core.stages.f5_verify import VerifyStageRunner
 from pathlib import Path
 
 import pytest
@@ -21,19 +20,17 @@ from core.contracts import (
 )
 from core.orchestrator.judger import GateBinding as EngineGateBinding
 from core.orchestrator.judger import GateResult as EngineGateResult
-from core.rsi import PlaceholderRSISupervisor, RSISupervisor
 from core.stages import StageContext, StageRunner
-from core.stages.f4_adapt import AdaptStageRunner
 from core.stages.f2_anatomy import AnatomyStageRunner
-from core.stages.f6_deliver import DeliverStageRunner
 from core.stages.f1_intake import IntakeStageRunner
-from core.stages.f3_scaffold import LOONGFORGE_EXTENSION_POINTS, ScaffoldStageRunner
+from core.stages.f3_scaffold import LOONGFORGE_EXTENSION_POINTS, plan_to_anatomy
 from validate import (
     AnatomyChecker,
     CheckContext,
     ConstructChecker,
     EvalChecker,
     GateChecker,
+    GateRunner,
     IntakeChecker,
     ParityChecker,
     TrainResumeChecker,
@@ -86,57 +83,38 @@ def test_unified_contract_aliases_and_new_models_validate() -> None:
 
 
 def test_stage_and_checker_placeholders_conform_to_protocols(tmp_path: Path) -> None:
-    # Stage 1 (`intake`) and Stage 2 (`anatomy`) are implemented; remaining stages stay placeholders.
+    # intake and anatomy are StageRunners; scaffold, migrate and align are scripts plus
+    # functions (they generate, write and compare rather than being driven by the scheduler).
     assert isinstance(IntakeStageRunner(), StageRunner)
     assert isinstance(AnatomyStageRunner(), StageRunner)
+    assert callable(plan_to_anatomy)
 
-    placeholder_runners = [
-        ScaffoldStageRunner(),
-        AdaptStageRunner(),
-        VerifyStageRunner(allow_untrusted=True),
-        DeliverStageRunner(),
-    ]
-    ctx = StageContext(
-        run_id="run-1",
-        stage="intake",
-        workspace_dir=tmp_path,
-        output_dir=tmp_path / "out",
-    )
-    for runner in placeholder_runners:
-        assert isinstance(runner, StageRunner)
-        with pytest.raises(NotImplementedError):
-            runner.run(ctx)
-
-    # IntakeChecker and AnatomyChecker are implemented; remaining checkers stay placeholders.
-    intake_checker = IntakeChecker()
-    assert isinstance(intake_checker, GateChecker)
-    assert len(intake_checker.validator_sha256()) == 64
-
-    anatomy_checker = AnatomyChecker()
-    assert isinstance(anatomy_checker, GateChecker)
-    assert len(anatomy_checker.validator_sha256()) == 64
-
-    placeholder_checkers = [
-        ConstructChecker(),
-        ParityChecker(),
-        TrainResumeChecker(),
-        EvalChecker(),
-    ]
+    # All six checkers are implemented. IntakeChecker and AnatomyChecker judge their own
+    # sealed package; ConstructChecker and ParityChecker delegate to the frozen structure
+    # judge and numeric gate; TrainResumeChecker judges resume continuity and EvalChecker the
+    # closed-loop report.
     check_ctx = CheckContext(
         commit=COMMIT_A,
         manifest_sha256=MANIFEST_A,
         package_dir=tmp_path,
     )
-    for checker in placeholder_checkers:
+    for checker in (
+        IntakeChecker(),
+        AnatomyChecker(),
+        ConstructChecker(),
+        ParityChecker(),
+        TrainResumeChecker(),
+        EvalChecker(),
+    ):
         assert isinstance(checker, GateChecker)
         assert len(checker.validator_sha256()) == 64
-        with pytest.raises(NotImplementedError):
-            checker.check(check_ctx)
 
-    supervisor = PlaceholderRSISupervisor()
-    assert isinstance(supervisor, RSISupervisor)
-    with pytest.raises(NotImplementedError):
-        supervisor.propose(())
+    # A checker handed no input reports `error` with a reason code. It neither raises nor
+    # passes: a gate that cannot run must not read as a gate that succeeded.
+    for checker in (ConstructChecker(), ParityChecker(), TrainResumeChecker(), EvalChecker()):
+        result = checker.check(check_ctx)
+        assert result.status == "error"
+        assert result.reason_codes == ("MISSING_INPUT",)
 
 
 def test_profile_declares_all_extension_points_skills_and_stateless_tools() -> None:
@@ -149,9 +127,8 @@ def test_profile_declares_all_extension_points_skills_and_stateless_tools() -> N
         "intake",
         "anatomy",
         "scaffold",
-        "adapt",
-        "verify",
-        "deliver",
+        "migrate",
+        "align",
     ]
 
     # Full profile validates schema_version, 40-char commit SHA, path_base, and real paths.
@@ -233,16 +210,16 @@ def test_profile_loader_rejects_short_commit_duplicate_keys_and_missing_paths(
         load_pipeline_profile(bad_req_path)
 
 
-def test_verify_stage_runner_fail_closed_defaults_and_checker_crash_isolation(
+def test_gate_runner_fail_closed_defaults_and_checker_crash_isolation(
     tmp_path: Path,
 ) -> None:
     # Fail-closed: trusted_validators cannot be omitted unless allow_untrusted=True.
     with pytest.raises(ValueError, match="trusted_validators"):
-        VerifyStageRunner([IntakeChecker()])
+        GateRunner([IntakeChecker()])
 
     # Fail-closed: string required_gates rejected.
     with pytest.raises(TypeError):
-        VerifyStageRunner(
+        GateRunner(
             [IntakeChecker()],
             allow_untrusted=True,
             required_gates="intake",  # type: ignore[arg-type]
@@ -290,7 +267,7 @@ def test_verify_stage_runner_fail_closed_defaults_and_checker_crash_isolation(
     crash_checker = _CrashChecker()
 
     # 1) All passing with trusted validator digest -> pass.
-    runner_ok = VerifyStageRunner(
+    runner_ok = GateRunner(
         [pass_checker],
         trusted_validators={pass_checker.validator_id: pass_checker.validator_sha256()},
     )
@@ -299,7 +276,7 @@ def test_verify_stage_runner_fail_closed_defaults_and_checker_crash_isolation(
     assert decision_ok.status == "pass"
 
     # 2) Partial checker subset against declared required_gates -> error (MISSING_REQUIRED_GATE).
-    runner_partial = VerifyStageRunner(
+    runner_partial = GateRunner(
         [pass_checker],
         trusted_validators={pass_checker.validator_id: pass_checker.validator_sha256()},
         required_gates=("intake", "anatomy"),
@@ -309,7 +286,7 @@ def test_verify_stage_runner_fail_closed_defaults_and_checker_crash_isolation(
     assert "MISSING_REQUIRED_GATE" in decision_partial.reason_codes
 
     # 3) Checker exception is isolated into structured CHECKER_CRASH error verdict.
-    runner_crash = VerifyStageRunner(
+    runner_crash = GateRunner(
         [pass_checker, crash_checker],
         trusted_validators={
             pass_checker.validator_id: pass_checker.validator_sha256(),

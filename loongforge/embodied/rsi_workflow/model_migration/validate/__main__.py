@@ -43,12 +43,13 @@ def _judge(a):
 
 def _align(a):
     from . import trajectory
-    from .frozen import align_gate_frozen, freeze
+    from .frozen import freeze, numeric_gate_frozen
     freeze.require_unlocked_judges()
     thresholds = _load_yaml(a.thresholds or Path(__file__).resolve().parent / 'frozen'
                             / 'thresholds.yaml')
     src, tgt = trajectory.load(a.src_trace), trajectory.load(a.tgt_trace)
-    report = align_gate_frozen.evaluate(trajectory.losses(src), trajectory.losses(tgt), thresholds)
+    report = numeric_gate_frozen.evaluate(trajectory.losses(src), trajectory.losses(tgt),
+                                          thresholds)
     report['traces'] = {'src': str(a.src_trace), 'tgt': str(a.tgt_trace)}
     report['run'] = {'src': trajectory.run_meta(src), 'tgt': trajectory.run_meta(tgt)}
     return _emit(report, a.out)

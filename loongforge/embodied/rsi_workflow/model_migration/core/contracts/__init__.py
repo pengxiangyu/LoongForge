@@ -1,4 +1,4 @@
-"""Strict contracts and loaders for the 6-stage pipeline artifacts."""
+"""Strict contracts and loaders for the 5-stage pipeline artifacts."""
 
 from .anatomy import (
     AnatomyBehaviorContract,

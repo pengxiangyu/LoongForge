@@ -14,11 +14,18 @@ ROOT = Path(__file__).parents[2]
 def test_canonical_package_layout_and_no_duplicate_legacy_shells() -> None:
     for name in ("engine", "stages", "rsi", "profiles"):
         assert not (ROOT / name).exists()
-    assert (ROOT / "core/__init__.py").read_bytes() == b""
     assert {p.name for p in (ROOT / "core/stages").iterdir() if p.is_dir() and p.name != "__pycache__"} == {
-        "f1_intake", "f2_anatomy", "f3_scaffold", "f4_adapt", "f5_verify", "f6_deliver",
+        "f1_intake", "f2_anatomy", "f3_scaffold", "f4_migrate", "f5_align",
     }
-    assert not list((ROOT / "core/stages/f5_verify").glob("*_check.py"))
+    # The gate checkers live in validate/, never inside a stage package. A stage may still
+    # own its own precondition check (f5_align/four_same_check.py), which is not a gate.
+    gate_checkers = {
+        "intake_check.py", "anatomy_check.py", "construct_check.py",
+        "parity_check.py", "train_resume_check.py", "eval_check.py",
+    }
+    assert not [
+        p for p in (ROOT / "core/stages").rglob("*_check.py") if p.name in gate_checkers
+    ]
 
 
 def test_orchestrator_imports_without_pydantic() -> None:

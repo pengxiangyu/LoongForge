@@ -20,5 +20,5 @@ rules:
   - "the collected trace must follow validate/trajectory.py's vma-loss-trace@1 schema, including
      the four-same fingerprint; a trace without it cannot be compared"
   - "`verdict` from compare_and_analyze is evidence, not a judgement: the numeric verdict comes
-     from validate/frozen/align_gate_frozen.py against the frozen thresholds"
+     from validate/frozen/numeric_gate_frozen.py against the frozen thresholds"
   - "propose_fix hints are routed back to F4 by slot; they never widen a threshold"

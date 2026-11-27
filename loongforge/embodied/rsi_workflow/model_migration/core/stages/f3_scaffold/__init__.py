@@ -1,12 +1,29 @@
-"""Stage 3 (`scaffold`): LoongForge 6 extension-point mapping and config/code skeleton generator."""
+"""F3: generate the target project skeleton, in one-to-one correspondence with the anatomy.
+
+  scaffold.py     creates the tree from the anatomy and TREE_SPEC.yaml
+  TREE_SPEC.yaml  the only description of the target layout; swapping frameworks edits this file
+  check_tree.py   missing-slot and surplus-file check over the result
+  templates/      one blank template per slot: responsibility and signatures, no logic
+
+Two ways to reach that anatomy, and they end at the same file format:
+
+  hand-written  a `STEP_ANATOMY.yaml` with segments and slots, passed to `scaffold.py --anatomy`
+  from F1/F2    `ScaffoldPlan.from_intake()` reads the sealed intake -- and, when supplied, the
+                sealed anatomy -- through the independent checkers, then `plan_to_anatomy()`
+                turns the accepted per-extension-point slot mapping into the same shape
+
+Neither path is allowed to invent a landing site. `from_intake` refuses to build on anything the
+checkers did not accept; `plan_to_anatomy` refuses a slot the layout spec does not declare and a
+target file the analysis did not claim, reporting the problem instead of guessing. The two axes
+it needs -- which segment a slot belongs to, which extension point owns it -- both live in
+TREE_SPEC.yaml, so pointing this stage at another framework stays a one-file change.
+"""
 
 from __future__ import annotations
 
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Literal, TypeAlias
-
-from core.stages.base import StageContext, StageResult
+from typing import Any, Literal, TypeAlias
 
 LoongForgeExtensionPoint: TypeAlias = Literal[
     "model_registry",
@@ -25,6 +42,9 @@ LOONGFORGE_EXTENSION_POINTS: tuple[LoongForgeExtensionPoint, ...] = (
     "eval_adapter",
     "regression_runner",
 )
+REQUIRED_SEGMENTS: tuple[str, ...] = ("S0", "S1", "S2", "S3", "S4", "S5", "S6", "S7")
+SEGMENT_IDS: tuple[str, ...] = ("S0", "S1", "S2", "S3", "S3.5", "S4", "S5", "S6", "S7")
+OPTIONAL_BRANCHES: tuple[str, ...] = ("W", "M", "E-infer", "E-eval")
 
 
 @dataclass(frozen=True, slots=True)
@@ -115,33 +135,82 @@ class ScaffoldPlan:
         )
 
 
-class ScaffoldStageRunner:
-    """Placeholder runner for Stage 3 (`scaffold`)."""
+def plan_to_anatomy(
+    plan: ScaffoldPlan,
+    *,
+    actions: dict[str, str] | None = None,
+    tree_spec_path: Path | None = None,
+) -> tuple[dict[str, Any], list[str]]:
+    """Turn an accepted `ScaffoldPlan` into the anatomy that `scaffold()` and the judge read.
 
-    stage_name = "scaffold"
+    Returns `(anatomy, problems)`. A non-empty `problems` list means the plan cannot be built
+    from without guessing, and the caller must stop: every entry is a slot the layout spec does
+    not declare, a target file the analysis never claimed, or a required segment left uncovered.
+    `actions` overrides the per-slot migration action (default `adapt`), which F4 reads back.
+    """
+    from .scaffold import TREE_SPEC, load_yaml, resolve_target
 
-    def plan(
-        self,
-        *,
-        model_name: str,
-        target_repo: Path,
-        intake_package: Path,
-        anatomy_package: Path,
-    ) -> ScaffoldPlan:
-        raise NotImplementedError(
-            "Stage 3 (`scaffold`) planning is not implemented in this milestone"
-        )
+    spec = load_yaml(tree_spec_path or TREE_SPEC)
+    slot_segments: dict[str, str] = spec["slot_segments"]
+    owners = {point: set(body["slots"]) for point, body in spec["extension_points"].items()}
+    actions = dict(actions or {})
+    segments: dict[str, list[dict[str, Any]]] = {}
+    branches: dict[str, list[dict[str, Any]]] = {}
+    problems: list[str] = []
 
-    def run(self, context: StageContext) -> StageResult:
-        raise NotImplementedError(
-            "Stage 3 (`scaffold`) is not implemented in this milestone"
-        )
+    for binding in plan.bindings:
+        owned = owners.get(binding.extension_point, set())
+        for slot_id in binding.slot_ids:
+            where = f"{binding.extension_point}.{slot_id}"
+            if slot_id not in slot_segments:
+                problems.append(f"{where}: slot is not declared in TREE_SPEC.slot_segments")
+                continue
+            if slot_id not in owned:
+                problems.append(f"{where}: TREE_SPEC assigns this slot to another extension point")
+                continue
+            target = resolve_target(spec, slot_id, plan.model_name, None)
+            if target not in binding.target_files:
+                problems.append(f"{where}: layout target {target!r} is not among the analysed "
+                                f"target files {list(binding.target_files)}")
+                continue
+            entry = {"slot": slot_id, "src": binding.registry_path, "dst": target,
+                     "action": actions.get(slot_id, "adapt"),
+                     "reason": binding.notes or f"slot reported by the F1 analysis for {where}"}
+            segment = slot_segments[slot_id]
+            owner = segments if segment in SEGMENT_IDS else branches
+            owner.setdefault(segment, []).append(entry)
+
+    anatomy: dict[str, Any] = {
+        "version": 4,
+        "model_tag": plan.model_name,
+        "source": {"repo": plan.metadata.get("source_repo", ""),
+                   "commit": plan.target_framework_commit},
+        "segments": [{"id": sid, "required": sid in REQUIRED_SEGMENTS,
+                      "slots": segments.get(sid, []),
+                      **({} if segments.get(sid) else
+                         {"empty_reason": f"the F1 analysis reported no slot for {sid}"})}
+                     for sid in SEGMENT_IDS],
+        "branches": [{"id": bid, "enabled": bool(branches.get(bid)),
+                      **({"slots": branches[bid]} if branches.get(bid) else
+                         {"empty_reason": f"the F1 analysis reported no slot for branch {bid}"})}
+                     for bid in OPTIONAL_BRANCHES],
+        "provenance": {"intake_manifest_sha256": plan.intake_manifest_sha256,
+                       "anatomy_manifest_sha256": plan.anatomy_manifest_sha256,
+                       "anatomy_reference_status": plan.anatomy_reference_status},
+    }
+    problems += [f"required segment {sid} has no slot: the plan does not cover it"
+                 for sid in REQUIRED_SEGMENTS if not segments.get(sid)]
+    return anatomy, problems
 
 
 __all__ = [
     "ExtensionPointBinding",
     "LOONGFORGE_EXTENSION_POINTS",
     "LoongForgeExtensionPoint",
+    "OPTIONAL_BRANCHES",
+    "REQUIRED_SEGMENTS",
+    "SEGMENT_IDS",
     "ScaffoldPlan",
-    "ScaffoldStageRunner",
+    "plan_to_anatomy",
 ]
+

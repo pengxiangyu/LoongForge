@@ -1,6 +1,6 @@
 # LoongForge 具身模型适配 RSI 框架
 
-面向 [`baidu-baige/LoongForge`](https://github.com/baidu-baige/LoongForge) 的统一 6 阶段具身/VLA 模型适配编排与验证框架（`intake` → `anatomy` → `scaffold` → `adapt` → `verify` → `deliver`，外加跨任务 `rsi` 外循环）。
+面向 [`baidu-baige/LoongForge`](https://github.com/baidu-baige/LoongForge) 的 5 阶段具身/VLA 模型适配编排框架（`intake` → `anatomy` → `scaffold` → `migrate` → `align`），校验独立成层。验收不是第 6 个阶段，而是 `validate/accept_gate.py` 对四个门禁的判定。
 
 ## 架构与当前落地状态
 
@@ -10,9 +10,9 @@
 | `core/orchestrator/` | 纯标准库 + PyYAML 轻量 DAG 编排内核（`graph`、原子 checkpoint 断点续跑/重规划 `scheduler`、传递失效 `invalidation`、`isolation`、确定性 `judger`） | 已完成 |
 | `core/stages/f1_intake/` | Stage 1：Git commit/tree/递归 submodule 锁、离线 `git bundle` 打包恢复、固定树 AST 入口发现、只读资产分流（`WAITING_ASSET`/`blocked`）、只读隔离 probe、原子封存与 CLI | 已完成（CPU 测试 + 真实 `openpi` 演练通过） |
 | `core/stages/f2_anatomy/` | Stage 2：强制复验 Stage 1 封存包、双独立子进程单步采集与重放、4 级权重快照对比、行为契约与观测计划、`FakeStepAdapter` 与 `OpenPIJaxAdapter` 骨架 | 离线闭环已完成（真机 GPU 待资产就绪） |
-| `validate/` | 独立校验器（`IntakeChecker` / `AnatomyChecker` 已实装；`Construct`/`Parity`/`TrainResume`/`Eval` 占位）；编排位于 `core/stages/f5_verify/` | Stage 1 & 2 已实装 |
-| `core/stages/{f3_scaffold,f4_adapt,f6_deliver}/` 与 `core/rsi/` | 对齐 LoongForge 6 大扩展点、3 个具身 Skill 与外循环 RSI 的契约与接口占位 | 接口占位就绪 |
-| `core/profiles/loongforge_embodied.yaml` | 声明式 6 阶段默认 DAG、LoongForge 6 大扩展点映射、3 个具身 Skill 与 5 个无状态确定性工具清单 | 已配置并校验 |
+| `validate/` | 独立校验层，六个 checker 全部实装：`IntakeChecker` / `AnatomyChecker` 复验封存包，`ConstructChecker`（冻结 structure judge）、`ParityChecker`（冻结 numeric gate）、`TrainResumeChecker`（存档续训一致性）、`EvalChecker`（闭环评测报告）。`GateRunner` 聚合，`accept_gate.py` 判定验收 | 全部门禁已实装 |
+| `core/stages/{f3_scaffold,f4_migrate,f5_align}/` | Stage 3 按 `TREE_SPEC.yaml` 生成骨架，Stage 4 用四种写入动作逐 slot 落原实现，Stage 5 驱动对比并路由判决 | 已完成 |
+| `core/profiles/loongforge_embodied.yaml` | 声明式 5 阶段 DAG、LoongForge 6 大扩展点映射、3 个具身 Skill 与 5 个无状态确定性工具清单 | 已配置并校验 |
 
 ## 快速验证
 
